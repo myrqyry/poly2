@@ -2,7 +2,11 @@
 
 ## Google Gemini API Setup
 
-To enable AI-powered image transformations, you'll need to configure the Google Gemini API:
+To enable AI-enhanced image transformations, you'll need to configure the Google Gemini API:
+
+**Important**: Gemini API provides image analysis and intelligent descriptions rather than direct image generation. The integration works by having Gemini analyze your image and provide detailed transformation guidance that enhances the canvas-based filters.
+
+Reference: https://ai.google.dev/gemini-api/docs/image-generation
 
 1. Get a Gemini API key from Google AI Studio
 2. Set the API key in the `script.js` file or use environment variables
@@ -18,9 +22,25 @@ Update the `GEMINI_CONFIG` object in `script.js`:
 ```javascript
 const GEMINI_CONFIG = {
     apiKey: 'your-api-key-here',
-    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent'
+    model: 'gemini-pro-vision',
+    imageGenerationUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent'
 };
 ```
+
+## How Gemini Integration Works
+
+1. **Image Analysis**: Gemini analyzes the uploaded image and understands its content
+2. **Style Consultation**: AI provides detailed instructions for retro console transformation
+3. **Enhanced Filtering**: Canvas-based filters apply transformations using AI insights
+4. **Fallback Mode**: If Gemini is unavailable, sophisticated demo filters are used
+
+## True AI Image Generation
+
+For actual AI image generation (not just analysis), consider integrating with:
+
+- **OpenAI DALL-E API**: `https://api.openai.com/v1/images/generations`
+- **Stability AI**: Stable Diffusion models
+- **Midjourney API**: (when available)
 
 ## Console Style Descriptions
 
@@ -33,7 +53,7 @@ The app supports these retro console styles:
 
 ## Demo Mode
 
-Without a Gemini API key, the app runs in demo mode using canvas-based filters that simulate retro graphics effects. This provides a working demonstration of the interface and basic transformation capabilities.
+Without a Gemini API key, the app runs in demo mode using enhanced canvas-based filters that simulate retro graphics effects. This provides a working demonstration of the interface and transformation capabilities with impressive visual results.
 
 ## File Structure
 

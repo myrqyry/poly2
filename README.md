@@ -43,20 +43,34 @@ Transform your images with the distinct graphical style of classic, low-poly 3D 
 
 ### Google Gemini API Setup (Optional)
 
-For AI-powered transformations, configure the Gemini API:
+For AI-enhanced transformations, configure the Gemini API:
+
+**Important Note**: Gemini API provides image analysis and style descriptions rather than direct image generation. The app uses Gemini to analyze your image and provide intelligent insights for enhanced canvas-based transformations.
 
 1. Get an API key from [Google AI Studio](https://makersuite.google.com/)
 2. Update the `GEMINI_CONFIG` in `script.js`:
    ```javascript
    const GEMINI_CONFIG = {
        apiKey: 'your-api-key-here',
-       apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent'
+       model: 'gemini-pro-vision',
+       imageGenerationUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent'
    };
    ```
 
+**How it works**:
+- Gemini analyzes your uploaded image
+- Provides detailed style transformation instructions
+- Enhanced canvas filters apply the transformation based on AI insights
+- Fallback to demo mode if API is unavailable
+
+For true AI image generation, consider integrating with:
+- OpenAI DALL-E API
+- Midjourney API
+- Stability AI (Stable Diffusion)
+
 ### Demo Mode
 
-Without an API key, the app uses canvas-based filters to simulate retro effects. This provides a working demonstration of all features.
+Without an API key, the app uses sophisticated canvas-based filters that simulate retro graphics effects. This provides a fully functional demonstration of all features with impressive visual results.
 
 ## 🎨 Retro Styles
 
