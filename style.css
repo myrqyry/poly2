@@ -1,0 +1,356 @@
+/* Reset and base styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    min-height: 100vh;
+    color: #fff;
+    line-height: 1.6;
+}
+
+/* Header */
+header {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 2px solid #00ff88;
+}
+
+header h1 {
+    font-size: 3rem;
+    color: #00ff88;
+    text-shadow: 0 0 10px #00ff88, 0 0 20px #00ff88;
+    margin-bottom: 0.5rem;
+}
+
+header p {
+    color: #ccc;
+    font-size: 1.1rem;
+}
+
+/* Main container */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Upload section */
+.upload-section {
+    margin-bottom: 3rem;
+}
+
+.upload-area {
+    border: 3px dashed #00ff88;
+    border-radius: 15px;
+    padding: 3rem;
+    text-align: center;
+    background: rgba(0, 255, 136, 0.05);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    background: rgba(0, 255, 136, 0.1);
+    border-color: #00ffaa;
+    transform: translateY(-5px);
+}
+
+.upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.upload-icon {
+    font-size: 4rem;
+    opacity: 0.7;
+}
+
+.upload-area p {
+    font-size: 1.2rem;
+    color: #ccc;
+}
+
+.image-preview {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    border: 2px solid #00ff88;
+}
+
+.image-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+    margin-bottom: 1rem;
+}
+
+/* Controls section */
+.controls-section {
+    margin-bottom: 3rem;
+}
+
+.console-selector h3 {
+    color: #00ff88;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+.console-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.console-option {
+    cursor: pointer;
+}
+
+.console-option input {
+    display: none;
+}
+
+.console-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 2px solid #555;
+    border-radius: 10px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.console-card:hover {
+    transform: translateY(-3px);
+    border-color: #00ff88;
+}
+
+.console-option input:checked + .console-card {
+    border-color: #00ff88;
+    background: rgba(0, 255, 136, 0.1);
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+}
+
+.console-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.console-card span {
+    font-weight: bold;
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+.console-card small {
+    color: #aaa;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.transform-controls {
+    text-align: center;
+}
+
+/* Buttons */
+.btn {
+    background: linear-gradient(45deg, #00ff88, #00cc6a);
+    color: #000;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 25px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 255, 136, 0.4);
+}
+
+.btn:disabled {
+    background: #555;
+    color: #999;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn.secondary {
+    background: linear-gradient(45deg, #666, #888);
+    color: #fff;
+}
+
+.btn.secondary:hover:not(:disabled) {
+    box-shadow: 0 10px 25px rgba(255, 255, 255, 0.2);
+}
+
+.btn-loading {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Result section */
+.result-section {
+    margin-top: 3rem;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    border: 2px solid #00ff88;
+}
+
+.result-section h3 {
+    color: #00ff88;
+    font-size: 1.8rem;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.image-container {
+    text-align: center;
+}
+
+.image-container h4 {
+    color: #ccc;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.image-container img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.result-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Status message */
+.status-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 255, 136, 0.9);
+    color: #000;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    font-weight: bold;
+    z-index: 1000;
+    max-width: 300px;
+    word-wrap: break-word;
+}
+
+.status-message.error {
+    background: rgba(255, 0, 100, 0.9);
+    color: #fff;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2rem;
+    }
+    
+    .container {
+        padding: 1rem;
+    }
+    
+    .upload-area {
+        padding: 2rem 1rem;
+    }
+    
+    .console-options {
+        grid-template-columns: 1fr;
+    }
+    
+    .before-after {
+        grid-template-columns: 1fr;
+    }
+    
+    .result-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .btn {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.result-section {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-content {
+    text-align: center;
+    color: #00ff88;
+}
+
+.loading-spinner {
+    font-size: 3rem;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
