@@ -41,36 +41,36 @@ Transform your images with the distinct graphical style of classic, low-poly 3D 
 
 ## 🔧 Configuration
 
-### Google Gemini API Setup (Optional)
+### Google GenAI SDK Integration
 
-For AI-enhanced transformations, configure the Gemini API:
+The application now uses the official **Google GenAI JavaScript SDK** for true AI image generation and transformation:
 
-**Important Note**: Gemini API provides image analysis and style descriptions rather than direct image generation. The app uses Gemini to analyze your image and provide intelligent insights for enhanced canvas-based transformations.
+**Key Features**:
+- **Real AI Image Generation**: Uses Gemini 2.5 Flash Image Preview model for actual image generation
+- **Intelligent Transformation**: AI understands your image and applies retro console styles
+- **Seamless Integration**: Official SDK with proper error handling and fallback
+- **User-Friendly Setup**: Simple API key configuration with persistent storage
 
-1. Get an API key from [Google AI Studio](https://makersuite.google.com/)
-2. Update the `GEMINI_CONFIG` in `script.js`:
-   ```javascript
-   const GEMINI_CONFIG = {
-       apiKey: 'your-api-key-here',
-       model: 'gemini-pro-vision',
-       imageGenerationUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent'
-   };
-   ```
+**Setup Instructions**:
+
+1. Get your free API key from [Google AI Studio](https://aistudio.google.com/apikey)
+2. Open the application and enter your API key in the configuration section
+3. Your key is securely stored locally for future use
+4. Start transforming images with true AI power!
 
 **How it works**:
-- Gemini analyzes your uploaded image
-- Provides detailed style transformation instructions
-- Enhanced canvas filters apply the transformation based on AI insights
-- Fallback to demo mode if API is unavailable
+- **Gemini 2.5 Flash Image Preview**: Analyzes your image and generates retro-styled versions
+- **Console-Specific Prompts**: Detailed prompts for each retro console style
+- **Intelligent Fallback**: Sophisticated canvas filters when AI is unavailable
+- **Mode Indicators**: Clear feedback on whether you're using AI or demo mode
 
-For true AI image generation, consider integrating with:
-- OpenAI DALL-E API
-- Midjourney API
-- Stability AI (Stable Diffusion)
+**Supported Models**:
+- `gemini-2.5-flash-image-preview` for image transformation
+- Automatic fallback to enhanced canvas filters
 
 ### Demo Mode
 
-Without an API key, the app uses sophisticated canvas-based filters that simulate retro graphics effects. This provides a fully functional demonstration of all features with impressive visual results.
+Without an API key, the app uses sophisticated canvas-based filters that simulate retro graphics effects with impressive visual results. Perfect for testing and demonstration.
 
 ## 🎨 Retro Styles
 

@@ -1,17 +1,112 @@
+// Poly2 - Retro Image Transformer with Google GenAI Integration
+// Based on Google GenAI JavaScript SDK patterns and "nano banana" example
+
+class GoogleGenAI {
+    constructor({ apiKey }) {
+        this.apiKey = apiKey;
+        this.baseURL = 'https://generativelanguage.googleapis.com/v1beta';
+        this.models = {
+            generateContent: this.generateContent.bind(this)
+        };
+    }
+
+    async generateContent({ model, contents }) {
+        const url = `${this.baseURL}/models/${model}:generateContent`;
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': this.apiKey
+            },
+            body: JSON.stringify({
+                contents: contents,
+                generationConfig: {
+                    temperature: 0.4,
+                    candidateCount: 1,
+                    maxOutputTokens: 2048
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Gemini API error: ${response.status} ${response.statusText}${errorData.error ? ` - ${errorData.error.message}` : ''}`);
+        }
+
+        const data = await response.json();
+        return { response: data };
+    }
+}
+
 class Poly2App {
     constructor() {
         this.currentImage = null;
         this.currentImageFile = null;
         this.selectedConsole = 'playstation1';
+        this.genAI = null;
+        this.apiKey = localStorage.getItem('poly2_api_key') || '';
         this.init();
     }
 
     init() {
         this.bindEvents();
         this.updateTransformButton();
+        this.initializeAPI();
+    }
+
+    initializeAPI() {
+        if (this.apiKey) {
+            try {
+                this.genAI = new GoogleGenAI({ apiKey: this.apiKey });
+                this.updateConfigStatus('API key configured ✓', 'success');
+                this.updateTransformMode('AI');
+                document.getElementById('apiKeyInput').value = '••••••••••••';
+            } catch (error) {
+                console.error('Error initializing GenAI:', error);
+                this.updateConfigStatus('Invalid API key', 'error');
+                this.updateTransformMode('Demo');
+            }
+        } else {
+            this.updateConfigStatus('Enter API key for AI transformations', '');
+            this.updateTransformMode('Demo');
+        }
+    }
+
+    updateConfigStatus(message, type) {
+        const status = document.getElementById('configStatus');
+        status.textContent = message;
+        status.className = `config-status ${type}`;
+    }
+
+    updateTransformMode(mode) {
+        const modeElement = document.getElementById('transformMode');
+        modeElement.textContent = mode === 'AI' ? 'Mode: AI Generation' : 'Mode: Demo Filters';
+        modeElement.className = `transform-mode ${mode.toLowerCase()}`;
     }
 
     bindEvents() {
+        // API Configuration
+        document.getElementById('saveApiKey').addEventListener('click', () => {
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const newApiKey = apiKeyInput.value.trim();
+            
+            if (newApiKey && !newApiKey.includes('•')) {
+                this.apiKey = newApiKey;
+                localStorage.setItem('poly2_api_key', newApiKey);
+                this.initializeAPI();
+                this.showStatus('API key saved successfully!', 'success');
+            } else if (!newApiKey) {
+                this.apiKey = '';
+                localStorage.removeItem('poly2_api_key');
+                this.genAI = null;
+                this.updateConfigStatus('API key removed', '');
+                this.updateTransformMode('Demo');
+                apiKeyInput.value = '';
+                this.showStatus('API key removed', 'info');
+            }
+        });
+
         // File input handling
         const imageInput = document.getElementById('imageInput');
         const uploadArea = document.getElementById('uploadArea');
@@ -129,21 +224,23 @@ class Poly2App {
         try {
             let transformedImage;
             
-            // Try Gemini API if configured, otherwise use demo transformation
-            if (GEMINI_CONFIG.apiKey) {
-                transformedImage = await this.callGeminiImageGeneration();
+            if (this.genAI && this.apiKey) {
+                // Use Google GenAI for true AI image generation
+                transformedImage = await this.generateWithAI();
+                this.showStatus('AI transformation complete! 🎉', 'success');
             } else {
-                // Fallback to demo transformation using canvas effects
+                // Fallback to demo transformation
                 transformedImage = await this.createDemoTransformation();
+                this.showStatus('Demo transformation complete!', 'success');
             }
             
             this.showResult(transformedImage);
-            this.showStatus(GEMINI_CONFIG.apiKey ? 'AI transformation complete!' : 'Demo transformation complete!', 'success');
             
         } catch (error) {
             console.error('Transformation error:', error);
-            // If Gemini fails, try demo transformation as fallback
-            if (GEMINI_CONFIG.apiKey) {
+            
+            // If AI fails, try demo transformation as fallback
+            if (this.genAI && this.apiKey) {
                 try {
                     const transformedImage = await this.createDemoTransformation();
                     this.showResult(transformedImage);
@@ -162,167 +259,67 @@ class Poly2App {
         }
     }
 
-    async callGeminiImageGeneration() {
-        // Note: Gemini API doesn't directly generate images, but can analyze and provide 
-        // detailed descriptions for image generation prompts to use with other services
-        // Reference: https://ai.google.dev/gemini-api/docs/image-generation
-        
-        const prompt = `Analyze this image and provide a detailed description of how to transform it into ${this.selectedConsole} retro console graphics style. Be specific about colors, textures, geometry, and visual effects needed.`;
-        
-        // Convert current image to base64 for API call
-        const base64Data = this.currentImage.split(',')[1];
-        
+    async generateWithAI() {
         try {
-            const response = await callGeminiAPI(base64Data, prompt);
+            // Convert the image to the format needed for the API
+            const imagePart = await this.createImagePart();
             
-            // Gemini will return text description, not generated image
-            if (response.candidates && response.candidates[0] && response.candidates[0].content) {
-                const description = response.candidates[0].content.parts[0].text;
-                
-                // For now, we'll show the description and use our demo transformation
-                console.log('Gemini style analysis:', description);
-                this.showStatus('AI analysis complete, applying transformation...', 'info');
-                
-                // Apply enhanced demo transformation based on AI insights
-                return await this.createEnhancedDemoTransformation(description);
-            } else {
-                throw new Error('No analysis provided by Gemini API');
+            // Build console-specific prompt following the "nano banana" style
+            const prompt = this.buildConsolePrompt();
+
+            // Use Gemini 2.5 Flash for image editing/transformation
+            // Following the pattern from the Google GenAI codegen instructions
+            const response = await this.genAI.models.generateContent({
+                model: 'gemini-2.5-flash-image-preview',
+                contents: [imagePart, prompt],
+            });
+
+            // Check if we got an image back
+            if (response.response.candidates && response.response.candidates[0] && response.response.candidates[0].content) {
+                for (const part of response.response.candidates[0].content.parts) {
+                    if (part.inlineData) {
+                        const base64ImageBytes = part.inlineData.data;
+                        const imageUrl = `data:image/png;base64,${base64ImageBytes}`;
+                        return imageUrl;
+                    }
+                }
             }
+            
+            // If no image was generated, throw error to fall back to demo
+            throw new Error('No image generated by AI model');
+            
         } catch (error) {
-            console.error('Gemini API error:', error);
+            console.error('AI Generation error:', error);
             throw error;
         }
     }
 
-    async createEnhancedDemoTransformation(aiDescription = null) {
-        // Enhanced version that could incorporate AI insights from Gemini
-        return new Promise((resolve) => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-
-            img.onload = () => {
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-
-                // Apply more sophisticated filters if AI description is available
-                if (aiDescription) {
-                    // Here we could parse the AI description and apply specific effects
-                    // For now, just use enhanced version of our console filters
-                    this.applyEnhancedRetroFilter(ctx, canvas.width, canvas.height);
-                } else {
-                    this.applyRetroFilter(ctx, canvas.width, canvas.height);
-                }
-
-                resolve(canvas.toDataURL('image/png'));
-            };
-
-            img.src = this.currentImage;
-        });
-    }
-
-    applyEnhancedRetroFilter(ctx, width, height) {
-        // Enhanced version with more sophisticated effects
-        const imageData = ctx.getImageData(0, 0, width, height);
-        const data = imageData.data;
-
-        switch (this.selectedConsole) {
-            case 'playstation1':
-                this.applyEnhancedPlayStation1Effect(data, width, height);
-                break;
-            case 'nintendo64':
-                this.applyEnhancedNintendo64Effect(data, width, height);
-                break;
-            case 'saturn':
-                this.applyEnhancedSaturnEffect(data, width, height);
-                break;
-            case 'psx':
-                this.applyEnhancedEarly3DEffect(data, width, height);
-                break;
-        }
-
-        ctx.putImageData(imageData, 0, 0);
-    }
-
-    applyEnhancedPlayStation1Effect(data, width, height) {
-        // More sophisticated PlayStation 1 effect
-        for (let i = 0; i < data.length; i += 4) {
-            const x = (i / 4) % width;
-            const y = Math.floor((i / 4) / width);
-            
-            // Stronger color quantization
-            data[i] = Math.floor(data[i] / 16) * 16;     // Red
-            data[i + 1] = Math.floor(data[i + 1] / 16) * 16; // Green
-            data[i + 2] = Math.floor(data[i + 2] / 16) * 16; // Blue
-            
-            // Add vertex wobble simulation
-            const wobble = Math.sin(x * 0.1) * Math.sin(y * 0.1) * 8;
-            data[i] = Math.max(0, Math.min(255, data[i] + wobble));
-            data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + wobble));
-            data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + wobble));
-        }
-    }
-
-    applyEnhancedNintendo64Effect(data, width, height) {
-        // Enhanced N64 effect with better color gradients
-        for (let i = 0; i < data.length; i += 4) {
-            // Smoother color reduction
-            data[i] = Math.floor(data[i] / 12) * 12;
-            data[i + 1] = Math.floor(data[i + 1] / 12) * 12;
-            data[i + 2] = Math.floor(data[i + 2] / 12) * 12;
-            
-            // Bilinear filtering effect
-            data[i] = Math.min(255, data[i] * 1.1);
-            data[i + 1] = Math.min(255, data[i + 1] * 1.05);
-            
-            // Add slight glow
-            const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            if (brightness > 180) {
-                data[i] = Math.min(255, data[i] + 10);
-                data[i + 1] = Math.min(255, data[i + 1] + 10);
-                data[i + 2] = Math.min(255, data[i + 2] + 10);
+    async createImagePart() {
+        // Convert the current image to the format expected by the Gemini API
+        const base64Data = this.currentImage.split(',')[1];
+        const mimeType = this.currentImageFile.type;
+        
+        return {
+            inlineData: {
+                data: base64Data,
+                mimeType: mimeType
             }
-        }
+        };
     }
 
-    applyEnhancedSaturnEffect(data, width, height) {
-        // Enhanced Saturn effect with more geometric feel
-        for (let i = 0; i < data.length; i += 4) {
-            // Very aggressive color quantization
-            data[i] = Math.floor(data[i] / 48) * 48;
-            data[i + 1] = Math.floor(data[i + 1] / 48) * 48;
-            data[i + 2] = Math.floor(data[i + 2] / 48) * 48;
+    buildConsolePrompt() {
+        // Following the "nano banana" example pattern - descriptive prompts for transformation
+        const consolePrompts = {
+            playstation1: "A retro PlayStation 1 version of this image with low-poly geometry, pixelated textures, limited 16-bit color palette, sharp angular surfaces, and the characteristic blocky geometric look of 1995 3D games. Apply strong dithering effects and reduce polygon count for that authentic PSX aesthetic.",
             
-            // Flat shading simulation
-            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-            const factor = avg > 128 ? 1.3 : 0.8;
-            data[i] = Math.max(0, Math.min(255, data[i] * factor));
-            data[i + 1] = Math.max(0, Math.min(255, data[i + 1] * factor));
-            data[i + 2] = Math.max(0, Math.min(255, data[i + 2] * factor));
-        }
-    }
-
-    applyEnhancedEarly3DEffect(data, width, height) {
-        // Enhanced early 3D effect with more instability
-        for (let i = 0; i < data.length; i += 4) {
-            const x = (i / 4) % width;
-            const y = Math.floor((i / 4) / width);
+            nintendo64: "A Nintendo 64 styled version of this image with smooth Gouraud shading, simple geometry, color banding, bilinear texture filtering, and the characteristic slightly blurred but smooth look of 1996 N64 games. Use warmer color tones and subtle fog effects typical of N64 graphics.",
             
-            // Heavy color reduction
-            data[i] = Math.floor(data[i] / 32) * 32;
-            data[i + 1] = Math.floor(data[i + 1] / 32) * 32;
-            data[i + 2] = Math.floor(data[i + 2] / 32) * 32;
+            saturn: "A Sega Saturn graphics version of this image with flat shading, geometric shapes, limited texture resolution, sharp polygon edges, and the distinct visual style of Saturn's 2D/3D hybrid capabilities. Use high contrast and saturated colors with minimal anti-aliasing.",
             
-            // More pronounced vertex wobble
-            const wobbleX = Math.sin(x * 0.05 + y * 0.02) * 15;
-            const wobbleY = Math.cos(x * 0.03 + y * 0.07) * 10;
-            const noise = wobbleX + wobbleY;
-            
-            data[i] = Math.max(0, Math.min(255, data[i] + noise));
-            data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
-            data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
-        }
+            psx: "An early 3D console graphics version of this image with vertex wobble effects, limited color depth, angular geometry, texture warping, and the unstable polygon rendering characteristic of early 3D hardware. Add subtle jittering and polygon pop-in effects for authentic early 3D console feel."
+        };
+        
+        return consolePrompts[this.selectedConsole] || consolePrompts.playstation1;
     }
 
     async createDemoTransformation() {
@@ -332,17 +329,13 @@ class Poly2App {
             const img = new Image();
 
             img.onload = () => {
-                // Set canvas size
                 canvas.width = img.width;
                 canvas.height = img.height;
-
-                // Draw original image
                 ctx.drawImage(img, 0, 0);
 
-                // Apply retro transformation based on selected console
+                // Apply retro filter based on selected console
                 this.applyRetroFilter(ctx, canvas.width, canvas.height);
 
-                // Return transformed image as data URL
                 resolve(canvas.toDataURL('image/png'));
             };
 
@@ -356,82 +349,113 @@ class Poly2App {
 
         switch (this.selectedConsole) {
             case 'playstation1':
-                this.applyPlayStation1Effect(data);
+                this.applyPlayStation1Effect(data, width, height);
                 break;
             case 'nintendo64':
-                this.applyNintendo64Effect(data);
+                this.applyNintendo64Effect(data, width, height);
                 break;
             case 'saturn':
-                this.applySaturnEffect(data);
+                this.applySaturnEffect(data, width, height);
                 break;
             case 'psx':
-                this.applyEarly3DEffect(data);
+                this.applyEarly3DEffect(data, width, height);
                 break;
         }
 
         ctx.putImageData(imageData, 0, 0);
     }
 
-    applyPlayStation1Effect(data) {
-        // Low-poly, pixelated effect with limited color palette
+    applyPlayStation1Effect(data, width, height) {
+        // Enhanced PlayStation 1 effect with vertex wobble simulation
         for (let i = 0; i < data.length; i += 4) {
-            // Reduce color depth
-            data[i] = Math.floor(data[i] / 32) * 32;     // Red
-            data[i + 1] = Math.floor(data[i + 1] / 32) * 32; // Green
-            data[i + 2] = Math.floor(data[i + 2] / 32) * 32; // Blue
+            const x = (i / 4) % width;
+            const y = Math.floor((i / 4) / width);
             
-            // Increase contrast slightly
-            data[i] = Math.min(255, data[i] * 1.2);
-            data[i + 1] = Math.min(255, data[i + 1] * 1.2);
-            data[i + 2] = Math.min(255, data[i + 2] * 1.2);
+            // Aggressive color quantization (16-bit style)
+            data[i] = Math.floor(data[i] / 16) * 16;     // Red
+            data[i + 1] = Math.floor(data[i + 1] / 16) * 16; // Green
+            data[i + 2] = Math.floor(data[i + 2] / 16) * 16; // Blue
+            
+            // Add vertex wobble simulation
+            const wobble = Math.sin(x * 0.1) * Math.sin(y * 0.1) * 8;
+            data[i] = Math.max(0, Math.min(255, data[i] + wobble));
+            data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + wobble));
+            data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + wobble));
+            
+            // Increase contrast for that sharp PSX look
+            data[i] = Math.min(255, data[i] * 1.3);
+            data[i + 1] = Math.min(255, data[i + 1] * 1.3);
+            data[i + 2] = Math.min(255, data[i + 2] * 1.3);
         }
     }
 
-    applyNintendo64Effect(data) {
-        // Smooth shading with color banding
+    applyNintendo64Effect(data, width, height) {
+        // Enhanced N64 effect with bilinear filtering simulation
         for (let i = 0; i < data.length; i += 4) {
-            // Reduce color depth but keep smoother gradients
-            data[i] = Math.floor(data[i] / 16) * 16;
-            data[i + 1] = Math.floor(data[i + 1] / 16) * 16;
-            data[i + 2] = Math.floor(data[i + 2] / 16) * 16;
+            // Smoother color reduction (less aggressive than PSX)
+            data[i] = Math.floor(data[i] / 12) * 12;
+            data[i + 1] = Math.floor(data[i + 1] / 12) * 12;
+            data[i + 2] = Math.floor(data[i + 2] / 12) * 12;
             
-            // Slight color shift towards warmer tones
+            // Bilinear filtering effect (slight blur)
             data[i] = Math.min(255, data[i] * 1.1);
             data[i + 1] = Math.min(255, data[i + 1] * 1.05);
-        }
-    }
-
-    applySaturnEffect(data) {
-        // Flat shading with geometric feel
-        for (let i = 0; i < data.length; i += 4) {
-            // Very limited color palette
-            data[i] = Math.floor(data[i] / 64) * 64;
-            data[i + 1] = Math.floor(data[i + 1] / 64) * 64;
-            data[i + 2] = Math.floor(data[i + 2] / 64) * 64;
             
-            // Increase saturation
-            const max = Math.max(data[i], data[i + 1], data[i + 2]);
-            if (max > 0) {
-                data[i] = Math.min(255, (data[i] / max) * max * 1.3);
-                data[i + 1] = Math.min(255, (data[i + 1] / max) * max * 1.3);
-                data[i + 2] = Math.min(255, (data[i + 2] / max) * max * 1.3);
+            // Add slight glow for that N64 anti-aliasing look
+            const brightness = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            if (brightness > 180) {
+                data[i] = Math.min(255, data[i] + 8);
+                data[i + 1] = Math.min(255, data[i + 1] + 8);
+                data[i + 2] = Math.min(255, data[i + 2] + 8);
             }
         }
     }
 
-    applyEarly3DEffect(data) {
-        // Vertex wobble simulation and limited colors
+    applySaturnEffect(data, width, height) {
+        // Enhanced Saturn effect with flat shading
         for (let i = 0; i < data.length; i += 4) {
-            // Heavy color reduction
-            data[i] = Math.floor(data[i] / 48) * 48;
-            data[i + 1] = Math.floor(data[i + 1] / 48) * 48;
-            data[i + 2] = Math.floor(data[i + 2] / 48) * 48;
+            // Very aggressive color quantization for flat shading
+            data[i] = Math.floor(data[i] / 32) * 32;
+            data[i + 1] = Math.floor(data[i + 1] / 32) * 32;
+            data[i + 2] = Math.floor(data[i + 2] / 32) * 32;
             
-            // Add slight noise for "vertex wobble" feel
-            const noise = (Math.random() - 0.5) * 20;
+            // Flat shading simulation
+            const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+            const factor = avg > 128 ? 1.4 : 0.7;
+            data[i] = Math.max(0, Math.min(255, data[i] * factor));
+            data[i + 1] = Math.max(0, Math.min(255, data[i + 1] * factor));
+            data[i + 2] = Math.max(0, Math.min(255, data[i + 2] * factor));
+            
+            // Increase saturation for that Saturn look
+            const maxComponent = Math.max(data[i], data[i + 1], data[i + 2]);
+            if (maxComponent > 0) {
+                data[i] = Math.min(255, (data[i] / maxComponent) * maxComponent * 1.2);
+                data[i + 1] = Math.min(255, (data[i + 1] / maxComponent) * maxComponent * 1.2);
+                data[i + 2] = Math.min(255, (data[i + 2] / maxComponent) * maxComponent * 1.2);
+            }
+        }
+    }
+
+    applyEarly3DEffect(data, width, height) {
+        // Enhanced early 3D effect with vertex wobble and instability
+        for (let i = 0; i < data.length; i += 4) {
+            const x = (i / 4) % width;
+            const y = Math.floor((i / 4) / width);
+            
+            // Heavy color reduction
+            data[i] = Math.floor(data[i] / 24) * 24;
+            data[i + 1] = Math.floor(data[i + 1] / 24) * 24;
+            data[i + 2] = Math.floor(data[i + 2] / 24) * 24;
+            
+            // More pronounced vertex wobble with multiple frequencies
+            const wobbleX = Math.sin(x * 0.05 + y * 0.02) * 12;
+            const wobbleY = Math.cos(x * 0.03 + y * 0.07) * 8;
+            const instability = Math.sin(x * y * 0.0001) * 6;
+            const noise = wobbleX + wobbleY + instability;
+            
             data[i] = Math.max(0, Math.min(255, data[i] + noise));
-            data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise));
-            data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise));
+            data[i + 1] = Math.max(0, Math.min(255, data[i + 1] + noise * 0.8));
+            data[i + 2] = Math.max(0, Math.min(255, data[i + 2] + noise * 0.6));
         }
     }
 
@@ -462,7 +486,8 @@ class Poly2App {
         if (!this.transformedImage) return;
 
         const link = document.createElement('a');
-        link.download = `poly2-${this.selectedConsole}-${Date.now()}.png`;
+        const mode = this.genAI && this.apiKey ? 'ai' : 'demo';
+        link.download = `poly2-${this.selectedConsole}-${mode}-${Date.now()}.png`;
         link.href = this.transformedImage;
         document.body.appendChild(link);
         link.click();
@@ -483,89 +508,7 @@ class Poly2App {
     }
 }
 
-// Configuration for Gemini API
-const GEMINI_CONFIG = {
-    apiKey: '', // Set your Gemini API key here or via environment
-    model: 'gemini-pro-vision', // For analyzing and understanding images
-    imageGenerationUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro-vision:generateContent',
-    // Note: Gemini API analyzes images and provides text descriptions, not direct image generation
-    // Reference: https://ai.google.dev/gemini-api/docs/image-generation
-    // For actual image generation, consider integrating with DALL-E, Midjourney API, or Stable Diffusion
-};
-
-// Console style prompts for Gemini API
-const CONSOLE_PROMPTS = {
-    playstation1: "Transform this image to look like early PlayStation 1 graphics with low-poly geometry, pixelated textures, limited color palette, and sharp angular surfaces typical of 1995 3D games.",
-    nintendo64: "Transform this image to mimic Nintendo 64 graphics with smooth Gouraud shading, simple geometry, color banding, and the characteristic look of 1996 console games.",
-    saturn: "Transform this image to look like Sega Saturn graphics with flat shading, geometric shapes, limited texture resolution, and the distinct visual style of Saturn's 3D capabilities.",
-    psx: "Transform this image to emulate early 3D console graphics with vertex wobble effects, limited color depth, angular geometry, and the unstable polygon rendering of early 3D hardware."
-};
-
 // Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new Poly2App();
 });
-
-// Add some helper functions for Gemini integration
-async function callGeminiAPI(imageData, prompt) {
-    if (!GEMINI_CONFIG.apiKey) {
-        throw new Error('Gemini API key not configured');
-    }
-
-    // Updated implementation based on Gemini API documentation
-    // Reference: https://ai.google.dev/gemini-api/docs/image-generation
-    const response = await fetch(GEMINI_CONFIG.imageGenerationUrl, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': GEMINI_CONFIG.apiKey
-        },
-        body: JSON.stringify({
-            contents: [{
-                parts: [
-                    { text: prompt },
-                    { 
-                        inline_data: { 
-                            mime_type: "image/jpeg", 
-                            data: imageData 
-                        } 
-                    }
-                ]
-            }],
-            generationConfig: {
-                temperature: 0.4,
-                candidateCount: 1,
-                maxOutputTokens: 2048
-            }
-        })
-    });
-    
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Gemini API error: ${response.status} ${response.statusText}${errorData.error ? ` - ${errorData.error.message}` : ''}`);
-    }
-    
-    return response.json();
-}
-
-function base64ToBlob(base64Data, contentType = 'image/png') {
-    const sliceSize = 1024;
-    const byteCharacters = atob(base64Data.split(',')[1]);
-    const bytesLength = byteCharacters.length;
-    const slicesCount = Math.ceil(bytesLength / sliceSize);
-    const byteArrays = new Array(slicesCount);
-
-    for (let sliceIndex = 0; sliceIndex < slicesCount; ++sliceIndex) {
-        const begin = sliceIndex * sliceSize;
-        const end = Math.min(begin + sliceSize, bytesLength);
-        const bytes = new Array(end - begin);
-        
-        for (let offset = begin, i = 0; offset < end; ++i, ++offset) {
-            bytes[i] = byteCharacters[offset].charCodeAt(0);
-        }
-        
-        byteArrays[sliceIndex] = new Uint8Array(bytes);
-    }
-    
-    return new Blob(byteArrays, { type: contentType });
-}

@@ -9,10 +9,23 @@
 <body>
     <header>
         <h1>🎮 Poly2</h1>
-        <p>Transform your images with retro console style</p>
+        <p>Transform your images with retro console style using AI</p>
     </header>
 
     <main class="container">
+        <div class="api-config-section" id="apiConfigSection">
+            <div class="config-card">
+                <h3>🤖 AI Configuration</h3>
+                <p>Enter your Google AI API key to enable true AI image generation:</p>
+                <div class="api-input">
+                    <input type="password" id="apiKeyInput" placeholder="Enter your Google AI API key">
+                    <button id="saveApiKey" class="btn secondary">Save Key</button>
+                </div>
+                <div class="config-status" id="configStatus"></div>
+                <small>Get your free API key from <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></small>
+            </div>
+        </div>
+
         <div class="upload-section">
             <div class="upload-area" id="uploadArea">
                 <div class="upload-content">
@@ -75,6 +88,7 @@
                     <span class="btn-text">Transform Image</span>
                     <span class="btn-loading" style="display: none;">🔄 Transforming...</span>
                 </button>
+                <div class="transform-mode" id="transformMode"></div>
             </div>
         </div>
 

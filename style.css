@@ -40,6 +40,102 @@ header p {
     padding: 2rem;
 }
 
+/* API Configuration section */
+.api-config-section {
+    margin-bottom: 3rem;
+}
+
+.config-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #00ff88;
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.config-card h3 {
+    color: #00ff88;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.config-card p {
+    color: #ccc;
+    margin-bottom: 1.5rem;
+}
+
+.api-input {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.api-input input {
+    background: rgba(0, 0, 0, 0.5);
+    border: 2px solid #555;
+    border-radius: 10px;
+    padding: 0.8rem 1.2rem;
+    color: #fff;
+    font-size: 1rem;
+    width: 300px;
+    max-width: 100%;
+}
+
+.api-input input:focus {
+    border-color: #00ff88;
+    outline: none;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+.config-status {
+    min-height: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+}
+
+.config-status.success {
+    color: #00ff88;
+}
+
+.config-status.error {
+    color: #ff4444;
+}
+
+.config-card small {
+    color: #999;
+}
+
+.config-card a {
+    color: #00ff88;
+    text-decoration: none;
+}
+
+.config-card a:hover {
+    text-decoration: underline;
+}
+
+/* Transform mode indicator */
+.transform-mode {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.transform-mode.ai {
+    background: rgba(0, 255, 136, 0.2);
+    color: #00ff88;
+}
+
+.transform-mode.demo {
+    background: rgba(255, 165, 0, 0.2);
+    color: #ffa500;
+}
+
 /* Upload section */
 .upload-section {
     margin-bottom: 3rem;
