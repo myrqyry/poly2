@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poly2 - Retro Image Transformer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>🎮 Poly2</h1>
+        <p>Transform your images with retro console style using AI</p>
+    </header>
+
+    <main class="container">
+        <div class="api-config-section" id="apiConfigSection">
+            <div class="config-card">
+                <h3>🤖 AI Configuration</h3>
+                <p>Enter your Google AI API key to enable true AI image generation:</p>
+                <div class="api-input">
+                    <input type="password" id="apiKeyInput" placeholder="Enter your Google AI API key">
+                    <button id="saveApiKey" class="btn secondary">Save Key</button>
+                </div>
+                <div class="config-status" id="configStatus"></div>
+                <small>Get your free API key from <a href="https://aistudio.google.com/apikey" target="_blank">Google AI Studio</a></small>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-content">
+                    <div class="upload-icon">📁</div>
+                    <p>Drop an image here or click to browse</p>
+                    <input type="file" id="imageInput" accept="image/*" hidden>
+                </div>
+            </div>
+            
+            <div class="image-preview" id="imagePreview" style="display: none;">
+                <img id="previewImg" alt="Preview">
+                <button id="changeImage" class="btn secondary">Change Image</button>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <div class="console-selector">
+                <h3>Choose Retro Console Style</h3>
+                <div class="console-options">
+                    <label class="console-option">
+                        <input type="radio" name="console" value="playstation1" checked>
+                        <div class="console-card">
+                            <div class="console-icon">🎮</div>
+                            <span>PlayStation 1</span>
+                            <small>Low-poly, pixelated textures</small>
+                        </div>
+                    </label>
+                    
+                    <label class="console-option">
+                        <input type="radio" name="console" value="nintendo64">
+                        <div class="console-card">
+                            <div class="console-icon">🕹️</div>
+                            <span>Nintendo 64</span>
+                            <small>Smooth shading, simple geometry</small>
+                        </div>
+                    </label>
+                    
+                    <label class="console-option">
+                        <input type="radio" name="console" value="saturn">
+                        <div class="console-card">
+                            <div class="console-icon">🌍</div>
+                            <span>Sega Saturn</span>
+                            <small>Flat shading, geometric shapes</small>
+                        </div>
+                    </label>
+                    
+                    <label class="console-option">
+                        <input type="radio" name="console" value="psx">
+                        <div class="console-card">
+                            <div class="console-icon">💿</div>
+                            <span>Early 3D</span>
+                            <small>Vertex wobble, limited colors</small>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="transform-controls">
+                <button id="transformBtn" class="btn primary" disabled>
+                    <span class="btn-text">Transform Image</span>
+                    <span class="btn-loading" style="display: none;">🔄 Transforming...</span>
+                </button>
+                <div class="transform-mode" id="transformMode"></div>
+            </div>
+        </div>
+
+        <div class="result-section" id="resultSection" style="display: none;">
+            <h3>Your Retro Transformation</h3>
+            <div class="result-container">
+                <div class="before-after">
+                    <div class="image-container">
+                        <h4>Original</h4>
+                        <img id="originalImg" alt="Original">
+                    </div>
+                    <div class="image-container">
+                        <h4>Retro Style</h4>
+                        <img id="resultImg" alt="Transformed">
+                    </div>
+                </div>
+                <div class="result-actions">
+                    <button id="downloadBtn" class="btn primary">Download Result</button>
+                    <button id="newTransformBtn" class="btn secondary">Try Another Style</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="status-message" id="statusMessage" style="display: none;"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
